@@ -1,0 +1,36 @@
+Ok, so this is how the crypto handshake seems to work:
+
+First, client:
+  * selects "the scheme" (method for encoding offsets of things, like
+    digests, in handshake packets)
+  * encodes "uptime" into 4 bytes, some non-zero version into the next
+    4 bytes, plus generates additional (HANDSHAKE_LEN - 40) random
+    bytes, forming (HANDSHAKE_LEN - 32) bytes long initial handshake packet
+  * using "the scheme" and the initial handshake bytes it calculates
+    digest offset
+  * it calculates the digest of the resulting (HANDSHAKE_LEN - 32)
+    bytes long buffer (with the first 30 bytes of the client's key,
+    using sha256 hash),
+  * it inserts the digest at the selected offset, getting a
+    HANDSHAKE_LEN bytes long handshake packet.
+
+To make server's handshake packet, server:
+  * generates an "uptime + version + random blob" initial handshake packet
+  * generates a key pair,
+  * gets (left 0-padded) 128 bytes of the public key,
+  * copies those public key bytes into the initial handshake packet,
+    at a position selected following "the scheme"
+  * "injects" into the packet "server digest", made with the server's
+    key first 36 bytes.
+
+For the servers response packet:
+  * find the client's digest,
+  * make a digest of the client's digest, made with 68 bytes of server's key,
+  * generate (HANDSHAKE_LEN - 32) random bytes as the initial response packet,
+  * make a digest of the generated random bytes, made with 32 bytes of
+    the previous digest,
+  * append the last digest to the random bytes to form a HANDSHAKE_LEN
+    bytes of the response packet.
+
+The handshake verification is just a mix of reversing/re-using the
+previous steps - left as an excersise...

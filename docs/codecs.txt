@@ -1,0 +1,27 @@
+audio_codecs = {
+    # 'pcm-pe': 0,
+    # 'adpcm': 1,
+    'mp3': 2,
+    # 'pcm-le': 3,
+    # 'nellymoser-16khz': 4,
+    # 'nellymoser-8khz': 5,
+    # 'nellymoser': 6,
+    # 'alaw': 7,
+    # 'ulaw': 8,
+    'aac': 10,
+    'speex': 11,
+    # 'mp3-8khz': 14,
+    # 'device-specific': 15
+    }
+
+
+video_codecs = {
+    # 'jpeg': 1,
+    'h263': 2,
+    'sorenson': 2,
+    # 'screen': 3,
+    # 'vp6': 4,
+    # 'vp6+alpha': 5,
+    # 'screen-v2': 6,
+    'h264': 7
+    }

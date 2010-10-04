@@ -1,0 +1,12 @@
+RTMP protocol implementation for the Twisted framework.
+=======================================================
+
+Another python RTMP implementation, but this one is supposed to match
+the twisted design principles closer than other implementations.
+
+
+Dependencies
+============
+
+* Twisted
+* M2Crypto for the crypto handshake

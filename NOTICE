@@ -1,0 +1,6 @@
+RTMP protocol implementation for the Twisted framework.
+Copyright (c) 2010 Arek Korbik
+
+
+rtmp/scripts/live_publish_client.py:
+    Copyright (c) 2010 Arek Korbik, Alessandro Decina
