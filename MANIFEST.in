@@ -1,0 +1,4 @@
+include LICENSE
+include NOTICE
+include MANIFEST.in
+recursive-include test *.py
