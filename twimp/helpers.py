@@ -17,9 +17,9 @@ import math
 
 from twisted.internet import error
 
-from rtmp.chunks import Demuxer
-from rtmp import const
-from rtmp.vecbuf import VecBuf
+from twimp.chunks import Demuxer
+from twimp import const
+from twimp.vecbuf import VecBuf
 
 
 def ignore_disconnect_eb(failure):

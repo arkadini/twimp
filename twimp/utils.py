@@ -20,11 +20,11 @@ from operator import itemgetter
 from twisted.internet import protocol
 from twisted.python import failure
 
-from rtmp import vecbuf
+from twimp import vecbuf
 
 LOG_CATEGORY = 'utils'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 def ms_time(t):

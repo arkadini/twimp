@@ -21,11 +21,11 @@ from twisted.internet.protocol import Protocol, Factory
 # epollreactor.install()
 from twisted.internet import reactor
 
-from rtmp import chunks
-from rtmp.chunks import Demuxer, Muxer
-from rtmp.handshake import Handshaker
-from rtmp.utils import GeneratorWrapperProtocol
-from rtmp.vecbuf import semiflatten, VecBuf
+from twimp import chunks
+from twimp.chunks import Demuxer, Muxer
+from twimp.handshake import Handshaker
+from twimp.utils import GeneratorWrapperProtocol
+from twimp.vecbuf import semiflatten, VecBuf
 
 
 def _fix_writeSequence(obj):
@@ -120,7 +120,7 @@ def encode_amf(*args):
     return s
     # return s.getvalue()
 
-from rtmp.primitives import _s_ulong_b
+from twimp.primitives import _s_ulong_b
 class DispatchProtocol(RTMPBaseServerProtocol):
     def __init__(self, *a, **kw):
         RTMPBaseServerProtocol.__init__(self, *a, **kw)

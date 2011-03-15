@@ -17,9 +17,9 @@ import datetime
 
 from twisted.trial import unittest
 
-from rtmp import amf0
-from rtmp.amf0 import decode, encode
-from rtmp.vecbuf import VecBuf, flatten
+from twimp import amf0
+from twimp.amf0 import decode, encode
+from twimp.vecbuf import VecBuf, flatten
 
 
 def p(s):

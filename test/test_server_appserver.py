@@ -17,16 +17,16 @@ import time
 
 from twisted.internet import defer, reactor
 
-from rtmp.amf0 import encode as encode_amf, decode as decode_amf, Object
-from rtmp import chunks
-from rtmp import const
-from rtmp.server import appserver
-from rtmp.server.appserver import CallDispatchProtocol, CallResultError
-from rtmp.server.appserver import AppDispatchServerProtocol
-from rtmp.server.appserver import AppDispatchServerFactory
-from rtmp.server.appserver import CallResultError, CallAbortedException
+from twimp.amf0 import encode as encode_amf, decode as decode_amf, Object
+from twimp import chunks
+from twimp import const
+from twimp.server import appserver
+from twimp.server.appserver import CallDispatchProtocol, CallResultError
+from twimp.server.appserver import AppDispatchServerProtocol
+from twimp.server.appserver import AppDispatchServerFactory
+from twimp.server.appserver import CallResultError, CallAbortedException
 
-from rtmp.helpers import vb
+from twimp.helpers import vb
 
 from test.test_proto import _ProtocolTestBase, mixin
 from test.test_proto import TestDemuxerMixin, TestMuxer, TestHandshaker

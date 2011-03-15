@@ -17,11 +17,11 @@ import itertools as it
 
 from twisted.trial import unittest
 
-from rtmp import chunks
-from rtmp.chunks import Header, absolutize
-from rtmp.chunks import Muxer, Demuxer
-from rtmp.utils import GeneratorWrapperProtocol
-from rtmp.vecbuf import VecBuf, flatten
+from twimp import chunks
+from twimp.chunks import Header, absolutize
+from twimp.chunks import Muxer, Demuxer
+from twimp.utils import GeneratorWrapperProtocol
+from twimp.vecbuf import VecBuf, flatten
 
 from helpers import StringTransport
 

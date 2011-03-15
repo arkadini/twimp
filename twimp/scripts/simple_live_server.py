@@ -15,15 +15,15 @@
 
 from twisted.internet import reactor, error
 
-from rtmp.amf0 import Object
-from rtmp.server import appserver
-from rtmp.server.appserver import URLDispatchingServerFactory, make_urls
-from rtmp.server.controllers import RTMPPlayer, RTMPRecorder
-from rtmp.server import inmemory
+from twimp.amf0 import Object
+from twimp.server import appserver
+from twimp.server.appserver import URLDispatchingServerFactory, make_urls
+from twimp.server.controllers import RTMPPlayer, RTMPRecorder
+from twimp.server import inmemory
 
 LOG_CATEGORY = 'livesrv'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 # SERVER_VERSION_STRING = 'FMS/3,0,1,1'
@@ -194,10 +194,10 @@ def main(argv):
 
     options, args = parser.parse_args(argv)
 
-    rtmp.log.set_levels_from_env()
+    twimp.log.set_levels_from_env()
     if options.debug:
-        rtmp.log.set_levels(options.debug)
-    rtmp.log.hook_twisted()
+        twimp.log.set_levels(options.debug)
+    twimp.log.hook_twisted()
 
     run(*map(int, args))
 

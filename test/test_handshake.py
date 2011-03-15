@@ -20,8 +20,8 @@ import time
 from twisted.python import failure
 from twisted.trial import unittest
 
-from rtmp.handshake import Handshaker, HandshakeFailedError
-from rtmp.utils import GeneratorWrapperProtocol
+from twimp.handshake import Handshaker, HandshakeFailedError
+from twimp.utils import GeneratorWrapperProtocol
 
 from helpers import StringTransport
 

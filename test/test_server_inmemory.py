@@ -16,8 +16,8 @@
 from twisted.internet import defer
 from twisted.trial import unittest
 
-from rtmp.server import interfaces, inmemory
-from rtmp.vecbuf import VecBuf, flatten
+from twimp.server import interfaces, inmemory
+from twimp.vecbuf import VecBuf, flatten
 
 # from helpers import StringTransport
 

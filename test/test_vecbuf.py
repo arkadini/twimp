@@ -15,7 +15,7 @@
 
 from twisted.trial import unittest
 
-from rtmp.vecbuf import VecBuf, VecBufEOB, flatten
+from twimp.vecbuf import VecBuf, VecBufEOB, flatten
 
 
 class TestFlatten(unittest.TestCase):

@@ -16,19 +16,19 @@
 from twisted.internet import defer, protocol, error, reactor
 from twisted.trial import unittest
 
-from rtmp.amf0 import encode as encode_amf, decode as decode_amf, Object
-from rtmp import chunks
-from rtmp import const
-# from rtmp.chunks import Header, absolutize
-# from rtmp.chunks import Muxer, Demuxer
-# from rtmp.utils import GeneratorWrapperProtocol
-# from rtmp.vecbuf import VecBuf, flatten
+from twimp.amf0 import encode as encode_amf, decode as decode_amf, Object
+from twimp import chunks
+from twimp import const
+# from twimp.chunks import Header, absolutize
+# from twimp.chunks import Muxer, Demuxer
+# from twimp.utils import GeneratorWrapperProtocol
+# from twimp.vecbuf import VecBuf, flatten
 
 
-from rtmp import proto
-from rtmp.proto import DispatchProtocol, CommandDispatchProtocol
-from rtmp.proto import EventDispatchProtocol
-from rtmp.helpers import vb, vb_clone
+from twimp import proto
+from twimp.proto import DispatchProtocol, CommandDispatchProtocol
+from twimp.proto import EventDispatchProtocol
+from twimp.helpers import vb, vb_clone
 
 from helpers import StringTransport
 

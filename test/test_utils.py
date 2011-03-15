@@ -15,7 +15,7 @@
 
 from twisted.trial import unittest
 
-from rtmp.utils import GeneratorWrapperProtocol, FrameSorter
+from twimp.utils import GeneratorWrapperProtocol, FrameSorter
 
 from helpers import StringTransport
 

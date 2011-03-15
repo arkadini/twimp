@@ -18,16 +18,16 @@ import struct
 
 from twisted.internet import defer
 
-from rtmp.amf0 import Object
-from rtmp import chunks
-from rtmp.primitives import _s_uchar, _s_double_uchar
-from rtmp.utils import FrameSorter
+from twimp.amf0 import Object
+from twimp import chunks
+from twimp.primitives import _s_uchar, _s_double_uchar
+from twimp.utils import FrameSorter
 
-from rtmp.helpers import vb_clone, vb
+from twimp.helpers import vb_clone, vb
 
 LOG_CATEGORY = 'ctrls'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 # frame flags

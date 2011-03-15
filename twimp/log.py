@@ -16,7 +16,7 @@
 import logging
 
 
-LOG_CATEGORY = 'rtmp'
+LOG_CATEGORY = 'twimp'
 LOG_FORMAT = ('%(asctime)s  %(process)5d  '
               '%(levelname)-7s %(name)-20s %(message)s '
               '[%(pathname)s:%(lineno)d]')

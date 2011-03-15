@@ -19,10 +19,10 @@ import time
 from twisted.python import failure
 from twisted.trial import unittest
 
-from rtmp.crypto import handshake as chandshake
-from rtmp.crypto.handshake import CryptoHandshaker
-from rtmp.handshake import HandshakeFailedError
-from rtmp.utils import GeneratorWrapperProtocol
+from twimp.crypto import handshake as chandshake
+from twimp.crypto.handshake import CryptoHandshaker
+from twimp.handshake import HandshakeFailedError
+from twimp.utils import GeneratorWrapperProtocol
 
 from helpers import StringTransport
 

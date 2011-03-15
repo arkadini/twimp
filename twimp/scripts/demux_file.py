@@ -16,8 +16,8 @@
 from cStringIO import StringIO
 import struct
 
-from rtmp.chunks import Demuxer, Header
-from rtmp.utils import GeneratorWrapperProtocol
+from twimp.chunks import Demuxer, Header
+from twimp.utils import GeneratorWrapperProtocol
 
 
 # temprarily here...

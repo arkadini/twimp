@@ -22,17 +22,17 @@ from twisted.internet import reactor
 # not importing gst here, we want to parse command line options ourselves
 # import gst
 
-from rtmp import amf0
-from rtmp.client import BaseClientApp, SimpleAppClientFactory
-from rtmp.client import connect_client_factory
-from rtmp.primitives import _s_uchar
-from rtmp.vecbuf import VecBuf
+from twimp import amf0
+from twimp.client import BaseClientApp, SimpleAppClientFactory
+from twimp.client import connect_client_factory
+from twimp.primitives import _s_uchar
+from twimp.vecbuf import VecBuf
 
-from rtmp.helpers import ellip
+from twimp.helpers import ellip
 
 LOG_CATEGORY = 'livepubcli'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 try:
     from fractions import Fraction
@@ -708,10 +708,10 @@ def main(argv):
     if video_codec is None and audio_codec is None:
         parser.error("Can't disable both audio and video.")
 
-    rtmp.log.set_levels_from_env()
+    twimp.log.set_levels_from_env()
     if options.debug:
-        rtmp.log.set_levels(options.debug)
-    rtmp.log.hook_twisted()
+        twimp.log.set_levels(options.debug)
+    twimp.log.hook_twisted()
 
     run(url, stream_name, audio_codec=audio_codec, video_codec=video_codec,
         audio_bitrate=options.arate, video_bitrate=options.vrate,

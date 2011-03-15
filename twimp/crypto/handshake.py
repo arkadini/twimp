@@ -19,15 +19,15 @@ import time
 
 from M2Crypto.EVP import hmac
 
-from rtmp import handshake
-from rtmp.handshake import Handshaker
-from rtmp.primitives import _s_uchar, _s_ulong_b as _s_ulong
+from twimp import handshake
+from twimp.handshake import Handshaker
+from twimp.primitives import _s_uchar, _s_ulong_b as _s_ulong
 
-from rtmp.utils import ms_time
+from twimp.utils import ms_time
 
 LOG_CATEGORY = 'crypto.hs'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 # most constants defined in this module were caught floating around

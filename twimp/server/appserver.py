@@ -20,21 +20,21 @@ import struct
 from twisted.internet import defer
 from twisted.internet import protocol
 
-from rtmp import amf0
-from rtmp import chunks
-from rtmp import const
-from rtmp.crypto.handshake import CryptoHandshaker
-from rtmp.primitives import _s_ulong_b as _s_ulong
-from rtmp.proto import UserControlDispatchDemuxer
-from rtmp.proto import EventDispatchProtocol, EventDispatchFactory
-from rtmp.server import errors
-from rtmp.utils import ms_time
+from twimp import amf0
+from twimp import chunks
+from twimp import const
+from twimp.crypto.handshake import CryptoHandshaker
+from twimp.primitives import _s_ulong_b as _s_ulong
+from twimp.proto import UserControlDispatchDemuxer
+from twimp.proto import EventDispatchProtocol, EventDispatchFactory
+from twimp.server import errors
+from twimp.utils import ms_time
 
-from rtmp.helpers import vb
+from twimp.helpers import vb
 
 LOG_CATEGORY = 'appsrv'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 # user control message with a single long field

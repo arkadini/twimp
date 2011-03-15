@@ -24,11 +24,11 @@ from twisted.internet import defer
 #     tasks = None
 #     HAVE_TASKS = 0
 
-from rtmp.server.interfaces import IStream, ILiveStream, IStreamGroup
-from rtmp.server.interfaces import IStreamServer
+from twimp.server.interfaces import IStream, ILiveStream, IStreamGroup
+from twimp.server.interfaces import IStreamServer
 
-from rtmp.server.errors import InvalidFrameNumber, StreamNotFoundError
-from rtmp.server.errors import NamespaceNotFoundError, StreamExistsError
+from twimp.server.errors import InvalidFrameNumber, StreamNotFoundError
+from twimp.server.errors import NamespaceNotFoundError, StreamExistsError
 
 
 class IMServerStream(object):

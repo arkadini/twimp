@@ -19,17 +19,17 @@ from twisted.internet import protocol
 from twisted.internet.protocol import ClientFactory
 from twisted.internet import reactor
 
-from rtmp import amf0
-from rtmp import chunks
-from rtmp.primitives import _s_ulong_b as _s_ulong
-from rtmp.proto import EventDispatchProtocol, EventDispatchFactory
-from rtmp.urls import parse_rtmp_url
+from twimp import amf0
+from twimp import chunks
+from twimp.primitives import _s_ulong_b as _s_ulong
+from twimp.proto import EventDispatchProtocol, EventDispatchFactory
+from twimp.urls import parse_rtmp_url
 
-from rtmp.helpers import vb, ignore_disconnect_eb
+from twimp.helpers import vb, ignore_disconnect_eb
 
 LOG_CATEGORY = 'client'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 CLIENT_VERSION = 'TwiMMF/1.0 (compatible; FMSc/1.0)'

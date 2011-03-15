@@ -21,20 +21,20 @@ from twisted.internet import reactor, defer
 from twisted.internet.protocol import Factory
 from twisted.python import failure
 
-from rtmp import amf0
-from rtmp import chunks
-from rtmp import const
-from rtmp.chunks import Demuxer, Muxer
-from rtmp.handshake import Handshaker
-from rtmp.primitives import _s_ulong_b as _s_ulong, _s_double_ulong_b
-from rtmp.utils import GeneratorWrapperProtocol
-from rtmp.vecbuf import semiflatten, VecBuf
+from twimp import amf0
+from twimp import chunks
+from twimp import const
+from twimp.chunks import Demuxer, Muxer
+from twimp.handshake import Handshaker
+from twimp.primitives import _s_ulong_b as _s_ulong, _s_double_ulong_b
+from twimp.utils import GeneratorWrapperProtocol
+from twimp.vecbuf import semiflatten, VecBuf
 
-from rtmp.helpers import vb
+from twimp.helpers import vb
 
 LOG_CATEGORY = 'proto'
-import rtmp.log
-log = rtmp.log.get_logger(LOG_CATEGORY)
+import twimp.log
+log = twimp.log.get_logger(LOG_CATEGORY)
 
 
 # defer.Deferred.debug = 1
