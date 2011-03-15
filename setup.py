@@ -20,4 +20,4 @@ setup(name='twimp',
       maintainer='Arek Korbik',
       maintainer_email='arkadini@gmail.com',
       url='http://github.com/arkadini/twimp',
-      packages=['rtmp', 'rtmp.crypto', 'rtmp.server', 'rtmp.scripts'])
+      packages=['twimp', 'twimp.crypto', 'twimp.server', 'twimp.scripts'])
