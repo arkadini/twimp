@@ -503,6 +503,24 @@ def _encode(s, values, type_dict=encoders):
     for v in values:
         _encode_single(s, v, type_dict=type_dict)
 
+def _encode_variable_name(s, name):
+    try:
+        name_class = name.__class__
+    except AttributeError:
+        name_class = None
+
+    value = name
+    if name_class == unicode:
+        value = name.encode('utf-8')
+    elif name_class not in (str, buffer):
+        raise EncoderError("Not an acceptable variable name type %r" %
+                           type(name))
+
+    if len(value) > 0xffff:
+        raise EncoderError("Variable name too long")
+
+    _encode_property_name(s, value)
+
 
 ##
 # public interface
@@ -520,6 +538,19 @@ def decode(data):
     except VecBufEOB:
         raise DecoderError('Incomplete encoded data')
 
+def decode_one(data):
+    """Decode a single value from AMF0-encoded buffer of data.
+
+    @type data: VecBuf
+
+    @returns: object
+    """
+    try:
+        return _decode_single(data)
+    except VecBufEOB:
+        raise DecoderError('Incomplete encoded data')
+
+
 def encode(*args):
     """Encode given values using AMF0.
 
@@ -529,6 +560,31 @@ def encode(*args):
     _encode(vb, args)
     return vb
 
+def decode_variable(data):
+    """Decode a single FLV data variable from AMF0-encoded buffer of data.
 
-__all__ = ['encode', 'decode', 'DecoderError', 'EncoderError',
+    @type data: VecBuf
+
+    @returns: (str, object)
+    """
+    try:
+        return _decode_string(data), _decode_single(data)
+    except VecBufEOB:
+        raise DecoderError('Incomplete encoded data')
+
+def encode_variable(name, value):
+    """Encode given name and value into an FLV data variable using AMF0.
+
+    @type name: str or unicode
+
+    @rtype: VecBuf
+    """
+    vb = VecBuf()
+    _encode_variable_name(vb, name)
+    _encode_single(vb, value)
+    return vb
+
+
+__all__ = ['encode', 'decode', 'encode_variable', 'decode_variable',
+           'DecoderError', 'EncoderError',
            'ECMAArray', 'Object', 'undefined', 'XMLDocument']

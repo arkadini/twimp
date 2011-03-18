@@ -19,6 +19,8 @@ from twisted.trial import unittest
 
 from twimp import amf0
 from twimp.amf0 import decode, encode
+from twimp.amf0 import decode_one
+from twimp.amf0 import decode_variable, encode_variable
 from twimp.vecbuf import VecBuf, flatten
 
 
@@ -286,3 +288,66 @@ class TestFailures(unittest.TestCase):
     def test_encoder(self):
         for i, args in enumerate(encoder_failures):
             self.assertRaises(amf0.EncoderError, encode, *args)
+
+
+class TestVariables(unittest.TestCase):
+    def test_decode(self):
+        self.assertEquals(decode_variable(v('0003666f6f 05')), ('foo', None))
+
+        # trailing (garbage) data in the buffer
+        self.assertEquals(decode_variable(v('0003666f6f 05 badbad')),
+                          ('foo', None))
+
+        # not enough data
+        self.assertRaises(amf0.DecoderError, decode_variable, v('0003666f6f'))
+        self.assertRaises(amf0.DecoderError, decode_variable, v('0003666f'))
+        self.assertRaises(amf0.DecoderError, decode_variable, v('0003'))
+        self.assertRaises(amf0.DecoderError, decode_variable, v('00'))
+        self.assertRaises(amf0.DecoderError, decode_variable, v(''))
+
+        d = ('000d7661726961626c65206e616d650a0000000300'
+             '3ff000000000000000400000000000000002000133')
+        self.assertEquals(decode_variable(v(d)),
+                          ('variable name', [1, 2, '3']))
+
+        # trailing data
+        buf = v(d + d)
+        self.assertEquals(decode_variable(buf), ('variable name', [1, 2, '3']))
+        self.assertEquals(decode_variable(buf), ('variable name', [1, 2, '3']))
+
+        self.assertRaises(amf0.DecoderError, decode_variable, buf)
+
+    def test_encode(self):
+        def r(buf):
+            return buf.read(len(buf))
+
+        self.assertEquals(r(encode_variable('foo', None)), p('0003666f6f 05'))
+        self.assertEquals(r(encode_variable('foo', ['bar'])),
+                          p('0003666f6f 0a00000001020003626172'))
+        self.assertRaises(amf0.EncoderError, encode_variable, None, None)
+        self.assertRaises(amf0.EncoderError, encode_variable, 'a' * 0x10000,
+                          None)
+
+    def test_encode_decode(self):
+        self.assertEquals(decode_variable(encode_variable('bar', None)),
+                          ('bar', None))
+        self.assertEquals(decode_variable(encode_variable('baz', [None, 1,
+                                                                  {'3': 2}])),
+                          ('baz', [None, 1, {'3': 2}]))
+
+
+class TestDecodeSingle(unittest.TestCase):
+    def test_decode(self):
+        data = []
+        # buf = VecBuf([''.join([p(r[0]) for r in simple_data])])
+        expected = []
+        for r in simple_data:
+            data.append(p(r[0]))
+            expected.extend(r[1])
+        buf = VecBuf([''.join(data)])
+
+        decoded = []
+        while buf:
+            decoded.append(decode_one(buf))
+
+        self.assertEquals(decoded, expected)
