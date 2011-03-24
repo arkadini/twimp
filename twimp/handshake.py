@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@ import struct
 import time
 
 from twisted.internet.error import ConnectError
-from twisted.internet.protocol import Protocol
-from twisted.python import failure
 
-from primitives import _s_uchar, _s_double_uchar
-from primitives import _s_ulong_b as _s_ulong, _s_double_ulong_b
+from primitives import _s_uchar
+from primitives import _s_ulong_b as _s_ulong
 from utils import ms_time
-from vecbuf import VecBuf
 
 
 _s_ts_simpver = struct.Struct('>LL')

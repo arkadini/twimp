@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ import math
 
 from twisted.internet import error
 
-from twimp.chunks import Demuxer
-from twimp import const
 from twimp.vecbuf import VecBuf
 
 
@@ -148,5 +146,4 @@ class PrintMsgPureDemuxerMixin(PrintMsgDemuxerMixin):
         super(PrintMsgDemuxerMixin, self).doUserControlMessage(header,
                                                                evt_type, body)
         m = user_ctrl_types.get(evt_type, '??')
-        r = vb_read
         print header, '(ctrl: (%d) %s)' % (evt_type, m), _body[:].encode('hex')

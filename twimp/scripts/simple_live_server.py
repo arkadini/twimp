@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011 Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 from twisted.internet import reactor, error
 
 from twimp.amf0 import Object
-from twimp.server import appserver
+from twimp.error import CallResultError, InvalidAppError
 from twimp.server.appserver import URLDispatchingServerFactory, make_urls
 from twimp.server.controllers import RTMPPlayer, RTMPRecorder
 from twimp.server import inmemory
@@ -142,7 +142,7 @@ class SimpleParametrizedPublishPlayApp(SimplePublishPlayApp):
         if md5(self.salt + ns).hexdigest() == token.lower():
             self.ns = ns
             return SimplePublishPlayApp.connect(self, request, opts)
-        raise appserver.InvalidAppError('app not found', fatal=True)
+        raise InvalidAppError('app not found', fatal=True)
 
 
 # note: the order should be from the most specific to most generic

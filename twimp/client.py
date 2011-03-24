@@ -198,8 +198,8 @@ class ClientStream(object):
 
     def set_chunk_size(self, new_size):
         sm = self.protocol.muxer.sendMessage
-        sm(0, chunks.PROTO_SET_CHUNK_SIZE, 0, vb(_s_ulong.pack(chunk_size)))
-        self.protocol.muxer.set_chunk_size(chunk_size)
+        sm(0, chunks.PROTO_SET_CHUNK_SIZE, 0, vb(_s_ulong.pack(new_size)))
+        self.protocol.muxer.set_chunk_size(new_size)
 
     def play(self, receiver):
         raise NotImplementedError()

@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 
-from zope.interface import Interface, implements
+from zope.interface import implements
 
 from twisted.internet import defer
 
@@ -540,7 +540,6 @@ class IMStreamGroup(object):
         if cb_args_map is None:
             cb_args_map = {}
 
-        subscription = []
         ds = []
 
         if pos_frames is None:

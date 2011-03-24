@@ -137,7 +137,7 @@ class Demuxer(object):
     def controlMessageReceived(self, header, body):
         handler = self.ctrl_handlers.get(header.type)
         if not handler:
-            self.controlMessageUnknown(self, header, body)
+            self.controlMessageUnknown(header, body)
             return
 
         verify_size, cnv_size, cnv_func, pass_rest, handler_func = handler

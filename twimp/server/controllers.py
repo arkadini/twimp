@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
 
 
 from collections import deque
-import struct
 
 from twisted.internet import defer
 
 from twimp.amf0 import Object
 from twimp import chunks
 from twimp.primitives import _s_uchar, _s_double_uchar
-from twimp.utils import FrameSorter
 
 from twimp.helpers import vb_clone, vb
 

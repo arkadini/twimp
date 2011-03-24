@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
 
 import random
 import struct
-import time
 
 from M2Crypto.EVP import hmac
 
-from twimp import handshake
 from twimp.handshake import Handshaker
-from twimp.primitives import _s_uchar, _s_ulong_b as _s_ulong
+from twimp.primitives import _s_ulong_b as _s_ulong
 
 from twimp.utils import ms_time
 

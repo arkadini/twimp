@@ -154,7 +154,7 @@ class UserControlDispatchDemuxer(Demuxer):
     def doUserControlMessage(self, header, evt_type, body):
         handler = self.user_ctrl_handlers.get(evt_type)
         if not handler:
-            self.doUserControlUnknownType(self, header, evt_type, body)
+            self.doUserControlUnknownType(header, evt_type, body)
             return
 
         verify_size, cnv_size, cnv_func, handler_func = handler

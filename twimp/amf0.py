@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ import calendar
 import datetime
 import struct
 import sys
-import time
 from UserDict import DictMixin
 
 from primitives import _s_double, _s_ushort, _s_ulong_b as _s_ulong
@@ -442,7 +441,6 @@ def _encode_date(s, value):
 
 def _encode_xml_document(s, value):
     string = value.encode('utf-8')
-    length = len(string)
     s.write(_s_m_longlen.pack(MARK_XML_DOCUMENT, len(string)))
     s.write(string)
 

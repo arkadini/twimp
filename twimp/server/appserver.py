@@ -13,8 +13,6 @@
 #   limitations under the License.
 
 
-import logging
-import time
 import struct
 
 from twisted.internet import defer
@@ -30,7 +28,6 @@ from twimp.error import PlayFailed, PlayNotFound
 from twimp.primitives import _s_ulong_b as _s_ulong
 from twimp.proto import UserControlDispatchDemuxer
 from twimp.server import errors
-from twimp.utils import ms_time
 
 from twimp.helpers import vb
 
@@ -136,7 +133,7 @@ def check_connected(method):
             return
 
         return method(self, *args, **kwargs)
-    wrapped.__name__ == method.__name__
+    wrapped.__name__ = method.__name__
     return wrapped
 
 def check_connected_remote(method):
@@ -253,7 +250,6 @@ class AppDispatchServerProtocol(CDP):
 
     @check_connected_remote
     def remote_createStream(self, ts, ms_id, _none):
-        sm = self.muxer.sendMessage
         s = self._nsmgr.make_stream(self)
         log.info('created message stream: %r', s.id)
 
