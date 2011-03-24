@@ -16,6 +16,10 @@
 from twimp.error import CallResultError
 
 
+class ArtificialError(RuntimeError):
+    """Purely artificial test error"""
+
+
 class ArtificialRemoteError(CallResultError):
     """Completely artificial test error"""
     code = 'Artificially.Failed'

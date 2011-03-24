@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -13,31 +13,26 @@
 #   limitations under the License.
 
 
-from collections import deque
 import struct
 
 from twisted.internet import protocol
-from twisted.internet import reactor, defer
 from twisted.internet.protocol import Factory
-from twisted.python import failure
 
 from twimp import amf0
 from twimp import chunks
 from twimp import const
 from twimp.chunks import Demuxer, Muxer
+from twimp.error import ProtocolContractError
 from twimp.handshake import Handshaker
 from twimp.primitives import _s_ulong_b as _s_ulong, _s_double_ulong_b
 from twimp.utils import GeneratorWrapperProtocol
-from twimp.vecbuf import semiflatten, VecBuf
+from twimp.vecbuf import semiflatten
 
 from twimp.helpers import vb
 
 LOG_CATEGORY = 'proto'
 import twimp.log
 log = twimp.log.get_logger(LOG_CATEGORY)
-
-
-# defer.Deferred.debug = 1
 
 
 # twisted.internet.abstract.FileDescriptor does ''.join() on sequences
@@ -200,36 +195,6 @@ class UserControlDispatchDemuxer(Demuxer):
         pass
 
 
-class CancellableCallQueue(object):
-    def __init__(self, reactor=reactor):
-        self.reactor = reactor
-        self.pending = {}
-        self._next_key = 0
-
-    def callLater(self, delay, f, *args, **kw):
-        call_key, self._next_key = self._next_key, self._next_key + 1
-        clid = self.reactor.callLater(delay, self._call_wrapper, call_key, f,
-                                      args, kw)
-        self.pending[call_key] = clid
-        return call_key, clid
-
-    def cancel(self, (call_key, clid)):
-        self.pending.pop(call_key, None)
-        return clid.cancel()
-
-    def _call_wrapper(self, call_key, f, args, kw):
-        del self.pending[call_key]
-        f(*args, **kw)
-
-    def cancel_all(self):
-        remaining = self.pending.copy()
-        self.pending.clear()
-
-        for key, clid  in remaining.iteritems():
-            if clid.active():
-                clid.cancel()
-
-
 class DispatchProtocol(BaseProtocol):
     demuxer_class = UserControlDispatchDemuxer
 
@@ -315,212 +280,3 @@ class DispatchProtocol(BaseProtocol):
 
 class DispatchFactory(BaseFactory):
     protocol = DispatchProtocol
-
-
-class DeferredTracker(object):
-    init_trans_id = 1
-
-    def __init__(self):
-        self._pending = {}
-        self._next_trans_id = {}
-
-    def next_trans(self, key):
-        trans_id = self._next_trans_id.setdefault(key, self.init_trans_id)
-        r, trans_id = trans_id, trans_id + 1
-        self._next_trans_id[key] = trans_id
-        return r
-
-    def push_deferred(self, key, trans_id, d):
-        if key not in self._pending:
-            self._pending[key] = {}
-        key_queue = self._pending[key]
-        key_queue[trans_id] = d
-
-    def pop_deferred(self, key, trans_id):
-        d = None
-        key_queue = self._pending.get(key, None)
-        if key_queue:
-            d = key_queue.pop(trans_id, None)
-        return d
-
-    def iter_all(self):
-        return ((key, d)
-                for (key, key_queue) in self._pending.iteritems()
-                for d in key_queue.itervalues())
-
-    def clear(self):
-        self._pending = {}
-
-    def reset(self):
-        self._next_trans_id = {}
-
-
-class CommandResultError(RuntimeError):
-    pass
-
-class CommandDispatchProtocol(DispatchProtocol):
-
-    def __init__(self):
-        DispatchProtocol.__init__(self)
-
-        self._cc_queue = CancellableCallQueue()
-        self._call_tracker = DeferredTracker()
-
-    def doCommand(self, ts, ms_id, args):
-        cmd = args[0]
-
-        handler_m = getattr(self, 'command_%s' % (cmd,), None)
-
-        if handler_m is None:
-            self._cc_queue.callLater(0, self.unknownCommandType, cmd, ts,
-                                     ms_id, args[1:])
-        else:
-            self._cc_queue.callLater(0, self._handler_wrapper, handler_m,
-                                     ts, ms_id, args[1:])
-
-    def _handler_wrapper(self, handler, ts, ms_id, args):
-        # wrap in try/except...?
-        handler(ts, ms_id, *args)
-
-    def command__result(self, ts, ms_id, trans_id, *args):
-        d = self._call_tracker.pop_deferred(ms_id, trans_id)
-
-        if d:
-            d.callback(args)
-        else:
-            self.unexpectedCallResult(ts, ms_id, trans_id, args)
-
-    def command__error(self, ts, ms_id, trans_id, *args):
-        d = self._call_tracker.pop_deferred(ms_id, trans_id)
-
-        if d:
-            d.errback(failure.Failure(CommandResultError(*args)))
-        else:
-            self.unexpectedCallError(ts, ms_id, trans_id, args)
-
-    def unknownCommandType(self, cmd, ts, msid, args):
-        raise NotImplementedError('unknown command %r%r' % (cmd,
-                                                            (ts, msid, args)))
-
-    def unexpectedCallResult(self, ts, ms_id, trans_id, args):
-        log.warning('unexpected _result: at %r, stream %r, trans %r, args: %r',
-                    ts, ms_id, trans_id, args)
-
-    def unexpectedCallError(self, ts, ms_id, trans_id, args):
-        log.warning('unexpected _error: at %r, stream %r, trans %r, args: %r',
-                    ts, ms_id, trans_id, args)
-
-
-    def connectionLost(self, reason=protocol.connectionDone):
-        self._cc_queue.cancel_all()
-        pending_calls = list(self._call_tracker.iter_all())
-        self._call_tracker.clear()
-        for ms_id, d in pending_calls:
-            d.errback(reason)
-        DispatchProtocol.connectionLost(self, reason)
-
-    def encode_amf(self, *args):
-        # for now only supporting AMF0
-        return amf0.encode(*args)
-
-    def _send_command(self, ts, ms_id, body, track_id):
-        # track_id > 0 -> will return a tracking deferred
-        d = None
-
-        if track_id:
-            d = defer.Deferred()
-            self._call_tracker.push_deferred(ms_id, track_id, d)
-
-        self.muxer.sendMessage(0, chunks.MSG_COMMAND, ms_id, body)
-        return d
-
-    def _sendRemote(self, ms_id, cmd, args, kwargs, track):
-        # ignoring kwargs for now...
-        trans_id = 0
-        if track:
-            trans_id = self._call_tracker.next_trans(ms_id)
-        encoded_args = self.encode_amf(cmd, trans_id, *args)
-
-        # hardcoding 0 time, does not seem to matter much...
-        return self._send_command(0, ms_id, encoded_args, trans_id)
-
-    def callRemote(self, ms_id, cmd, *args, **kw):
-        return self._sendRemote(ms_id, cmd, args, kw, True)
-
-    def signalRemote(self, ms_id, cmd, *args, **kw):
-        # similar to callRemote, except we don't expect any results
-        return self._sendRemote(ms_id, cmd, args, kw, False)
-
-
-class CommandDispatchFactory(DispatchFactory):
-    protocol = CommandDispatchProtocol
-
-
-class ProtocolContractError(ValueError):
-    pass
-
-class UnexpectedStatusError(ValueError):
-    pass
-
-class EventDispatchProtocol(CommandDispatchProtocol):
-    def __init__(self):
-        CommandDispatchProtocol.__init__(self)
-
-        # { ms_id => deque([(code, Deferred), ...]) }
-        self._event_callbacks = {}
-
-    def _add_status_deferred(self, ms_id, code, d):
-        q = self._event_callbacks.get(ms_id, None)
-        if q is None:
-            q = self._event_callbacks[ms_id] = deque()
-        q.append((code, d))
-
-    def _pop_status_deferred(self, ms_id):
-        code, d = None, None
-        q = self._event_callbacks.get(ms_id, None)
-        if q:
-            code, d = q.popleft()
-        return code, d
-
-    def _pop_status_all(self):
-        ret = ((code, d)
-               for q in self._event_callbacks.itervalues()
-               for (code, d) in q)
-        self._event_callbacks = {}
-        return ret
-
-    def waitStatus(self, ms_id, code):
-        d = defer.Deferred()
-        self._add_status_deferred(ms_id, code, d)
-        return d
-
-    def command_onStatus(self, ts, ms_id, _trans_id, _none, info):
-        # trans_id not used, and _none seems to always be None...
-        code, d = self._pop_status_deferred(ms_id)
-
-        if not d:
-            self.unhandledOnStatus(ts, ms_id, info)
-        else:
-            try:
-                evt_code = info.code
-            except AttributeError, e:
-                d.errback(ProtocolContractError(e))
-            else:
-                if code is None or evt_code == code:
-                    d.callback(info)
-                else:
-                    d.errback(UnexpectedStatusError(info))
-
-    def unhandledOnStatus(self, ts, ms_id, info):
-        log.warning('unhandled onStatus: at %r, stream %r, info: %r',
-                    ts, ms_id, info)
-
-    def connectionLost(self, reason=protocol.connectionDone):
-        for _code, d in self._pop_status_all():
-            d.errback(reason)
-
-        CommandDispatchProtocol.connectionLost(self, reason)
-
-
-class EventDispatchFactory(CommandDispatchFactory):
-    protocol = EventDispatchProtocol

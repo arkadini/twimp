@@ -16,6 +16,19 @@
 from twimp import amf0
 
 
+class ProtocolContractError(ValueError):
+    pass
+
+
+class UnexpectedStatusError(ValueError):
+    pass
+
+
+class CommandResultError(RuntimeError):
+    pass
+
+
+
 class CallResultError(ValueError):
     """Call resulted in an error"""
 

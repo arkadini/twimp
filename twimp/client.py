@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from twisted.internet import reactor
 from twimp import amf0
 from twimp import chunks
 from twimp.primitives import _s_ulong_b as _s_ulong
-from twimp.proto import EventDispatchProtocol, EventDispatchFactory
+from twimp.dispatch import EventDispatchProtocol, EventDispatchFactory
 from twimp.urls import parse_rtmp_url
 
 from twimp.helpers import vb, ignore_disconnect_eb

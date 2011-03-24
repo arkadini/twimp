@@ -23,13 +23,12 @@ from twisted.internet import protocol
 from twimp import chunks
 from twimp import const
 from twimp.crypto.handshake import CryptoHandshaker
-from twimp.dispatch import CallDispatchProtocol
+from twimp.dispatch import  EventDispatchFactory, CallDispatchProtocol
 from twimp.error import CallResultError, CallAbortedException
 from twimp.error import ConnectFailedError, InvalidAppError
 from twimp.error import PlayFailed, PlayNotFound
 from twimp.primitives import _s_ulong_b as _s_ulong
 from twimp.proto import UserControlDispatchDemuxer
-from twimp.proto import EventDispatchFactory
 from twimp.server import errors
 from twimp.utils import ms_time
 

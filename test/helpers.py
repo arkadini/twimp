@@ -38,3 +38,7 @@ def muxer_messages(mux):
               else m[3]),
              m[4])
             for m in mux.messages]
+
+
+def unvb(vb):
+    return vb.read(len(vb))[:]
