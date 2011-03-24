@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -546,3 +546,64 @@ class TestMuxerDemuxer(unittest.TestCase):
                                                     body.read(len(body))))
 
         self.assertEquals(d_in, d_out)
+
+    def test_many_headers(self):
+        # OK, this test is a bit brittle, as we assume the following
+        # properties of the encoder/muxer:
+        # * it will allocate new chunk stream ids as long as we
+        #   provide it with unseen combinations of type and message
+        #   stream id
+        # * the allocated ids will be consecutive numbers
+        # * given the exactly same args to sendMessage the second call
+        #   will produce a bitstream of a message with completely
+        #   compressed header
+        #
+        # At the moment that seems the only reasonable way to force
+        # muxer to use higher chunk stream ids, with different levels
+        # of header compression, using only the public API...
+
+        # for now, make sure we're using SimpleChunkProducer:
+        class LocalTestMuxer(Muxer):
+            chunk_producer_class = chunks.SimpleChunkProducer
+
+        # first, generate and mux a whole bunch of messages
+        tm = StringTransport()
+        mux = LocalTestMuxer(tm)
+
+        for i in range(256 + 64 + 1):
+            mux.sendMessage(0, chunks.MSG_DATA, i, VecBuf(['']))
+            mux.sendMessage(0, chunks.MSG_DATA, i, VecBuf(['']))
+
+        # ... now demux the resulting binary data
+        td = StringTransport()
+        p = TestDemuxerProtocol()
+
+        dmx = MessagePassingDemuxer(p)
+
+        p.init_handler(dmx.gen_handler())
+
+        p.makeConnection(td)
+
+        p.dataReceived(tm.value())
+
+        demuxed = p.pop_messages()
+
+        # ... and check it maches the result we expect based on the
+        # above assumptions
+        first_csid = demuxed[0][0].cs_id
+        for i in range(256 + 64 + 1):
+            h, body = demuxed[2 * i]
+            self.assertEquals((h.cs_id, h.real_time, h.real_size, h.real_type,
+                               h.real_ms_id),
+                              (i + first_csid, 0, 0, 18, i))
+            self.assertEquals((h.cs_id, h.time, h.size, h.type, h.ms_id),
+                              (i + first_csid, 0, 0, 18, i))
+            self.assertEquals(len(body), 0)
+
+            h, body = demuxed[2 * i + 1]
+            self.assertEquals((h.cs_id, h.real_time, h.real_size, h.real_type,
+                               h.real_ms_id),
+                              (i + first_csid, None, None, None, None))
+            self.assertEquals((h.cs_id, h.time, h.size, h.type, h.ms_id),
+                              (i + first_csid, 0, 0, 18, i))
+            self.assertEquals(len(body), 0)

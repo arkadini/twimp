@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 from primitives import _s_time_size_type, _s_time, _s_set_bw
 from primitives import _s_ulong_l, _s_ulong_b, _s_uchar, _s_ushort, _s_ushort_l
+from primitives import _s_double_uchar, _s_ext_csid
 import vecbuf
 
 
@@ -237,9 +238,9 @@ class Demuxer(object):
 
 
 def _encode_basic_header(h_type, cs_id):
-    if cs_id > 0x013f:          # 255 + 64
-        return _s_ext_csid.pack((h_type << 6) | 1, cd_id - 64)
-    elif cs_id > 0x40:          # 64
+    if cs_id > 0x013f:          # 256 + 63
+        return _s_ext_csid.pack((h_type << 6) | 1, cs_id - 64)
+    elif cs_id > 0x3f:          # 63
         return _s_double_uchar.pack(h_type << 6, cs_id - 64)
 
     return _s_uchar.pack((h_type << 6) | cs_id)

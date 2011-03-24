@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ _s_ulong_l = struct.Struct('<L')
 _s_double_ulong_b = struct.Struct('>LL')
 _s_double = struct.Struct('>d')
 
-_s_ext_csid = struct.Struct('>BH')
+_s_ext_csid = struct.Struct('<BH')
 _s_time_size_type = struct.Struct('>HBHBB')
 _s_time = struct.Struct('>HB')
 
