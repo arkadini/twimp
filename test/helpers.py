@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 
 from twisted.test import proto_helpers
 
+from twimp.amf0 import decode as decode_amf
+from twimp import chunks
+
+from twimp.helpers import vb
+
+
 
 class StringTransport(proto_helpers.StringTransport):
     def writeSequence(self, iovec):
@@ -23,3 +29,12 @@ class StringTransport(proto_helpers.StringTransport):
 
         for elt in iovec:
             self.write(elt)
+
+
+def muxer_messages(mux):
+    return [(m[0], m[1], m[2],
+             (decode_amf(vb(m[3]))
+              if m[1] in (chunks.MSG_COMMAND, chunks.MSG_DATA)
+              else m[3]),
+             m[4])
+            for m in mux.messages]

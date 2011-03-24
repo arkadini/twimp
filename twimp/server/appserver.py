@@ -1,4 +1,4 @@
-#   Copyright (c) 2010 Arek Korbik
+#   Copyright (c) 2010, 2011  Arek Korbik
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -20,13 +20,16 @@ import struct
 from twisted.internet import defer
 from twisted.internet import protocol
 
-from twimp import amf0
 from twimp import chunks
 from twimp import const
 from twimp.crypto.handshake import CryptoHandshaker
+from twimp.dispatch import CallDispatchProtocol
+from twimp.error import CallResultError, CallAbortedException
+from twimp.error import ConnectFailedError, InvalidAppError
+from twimp.error import PlayFailed, PlayNotFound
 from twimp.primitives import _s_ulong_b as _s_ulong
 from twimp.proto import UserControlDispatchDemuxer
-from twimp.proto import EventDispatchProtocol, EventDispatchFactory
+from twimp.proto import EventDispatchFactory
 from twimp.server import errors
 from twimp.utils import ms_time
 
@@ -127,116 +130,6 @@ class DelegateSelectedUserControlDemuxer(UserControlDispatchDemuxer):
                                             stream_id, length)
 
 
-class CallResultError(ValueError):
-    """Call resulted in an error"""
-
-    level = 'error'
-    code = 'NetStream.Failed'   # looks like the most generic error type code
-
-    def __init__(self, *args, **kwargs):
-        ValueError.__init__(self, *args)
-        self.is_fatal = kwargs.get('fatal', False)
-
-    def get_error_args(self):
-        dsc = self.__doc__
-        if self.args:
-            dsc = '%s: %s' % (dsc, self.args[0])
-        return (None, amf0.Object(level=self.level, code=self.code,
-                                  description=dsc))
-
-
-class CallAbortedException(Exception):
-    """Call aborted"""
-
-
-class CallDispatchProtocol(EventDispatchProtocol):
-    def __init__(self):
-        EventDispatchProtocol.__init__(self)
-
-    def session_time(self):
-        return time.time() - self.session_init_time
-
-    def unknownCommandType(self, cmd, ts, ms_id, args):
-        trans_id = args[0]
-
-        handler_m = getattr(self, 'remote_%s' % (cmd,), None)
-
-        if handler_m is None:
-            d = defer.maybeDeferred(self.unknownRemoteCall, cmd, ts, ms_id,
-                                    args[1:])
-        else:
-            d = defer.maybeDeferred(handler_m, ts, ms_id, *args[1:])
-
-        if trans_id:
-            d.addCallback(self._remote_handler_cb, ms_id, trans_id)
-
-        d.addErrback(self._remote_abort_handler_eb)
-        d.addErrback(self._remote_handler_eb, ms_id, trans_id)
-
-    def _remote_abort_handler_eb(self, failure):
-        failure.trap(CallAbortedException)
-        # log failure but do nothing more
-        log.debug('remote call aborted: %s', failure.value)
-
-    def _remote_handler_cb(self, result, ms_id, trans_id):
-        # log.debug('remote call result: %r', result)
-        if not isinstance(result, (tuple, list)):
-            result = (result,)
-
-        body = self.encode_amf('_result', trans_id, *result)
-
-        ts = ms_time(self.session_time())
-        self.muxer.sendMessage(ts, chunks.MSG_COMMAND, ms_id, body)
-
-    def _remote_handler_eb(self, failure, ms_id, trans_id):
-        if log.isEnabledFor(logging.DEBUG):
-            log.info('remote call failure: %s', failure.value,
-                     exc_info=(failure.type, failure.value,
-                               failure.getTracebackObject()))
-        else:
-            log.info('remote call failure: %s', failure.value)
-
-        fatal = False
-        if failure.check(CallResultError):
-            body = self.encode_amf('_error', trans_id,
-                                   *failure.value.get_error_args())
-            fatal = failure.value.is_fatal
-        else:
-            err = amf0.Object(code='NetStream.Failed', level='error',
-                              description=repr(failure.value))
-            body = self.encode_amf('_error', trans_id, None, err)
-
-        ts = ms_time(self.session_time())
-        self.muxer.sendMessage(ts, chunks.MSG_COMMAND, ms_id, body)
-
-        if fatal:
-            self.transport.loseConnection()
-
-    def unknownRemoteCall(self, cmd, ts, ms_id, args):
-        # seems that we're just supposed to silently ignore the request
-        log.warning('unknown method called: %s, args: %r', cmd, args)
-        raise CallAbortedException('unknown command %r' % (cmd,))
-
-CDP = CallDispatchProtocol
-
-
-class ConnectFailedError(CallResultError):
-    """Connection attempt failed"""
-    code = 'NetConnection.Connect.Failed'
-
-class InvalidAppError(CallResultError):
-    """The specified app is invalid"""
-    code = 'NetConnection.Connect.InvalidApp'
-
-class PlayFailed(CallResultError):
-    """Failure while attempting to play"""
-    code = 'NetStream.Play.Failed'
-
-class PlayNotFound(CallResultError):
-    """Requested stream not found"""
-    code = 'NetStream.Play.StreamNotFound'
-
-
 def check_connected(method):
     def wrapped(self, *args, **kwargs):
         if not self._connected:
@@ -273,6 +166,8 @@ rtmp_to_internal_types = {
     const.RTMP_AUDIO: chunks.MSG_AUDIO,
     const.RTMP_VIDEO: chunks.MSG_VIDEO,
     }
+
+CDP = CallDispatchProtocol
 
 class AppDispatchServerProtocol(CDP):
     handshaker_class = CryptoHandshaker
