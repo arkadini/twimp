@@ -121,6 +121,24 @@ class SimpleAppClientProtocol(BaseClientProtocol):
 
         BaseClientProtocol.connectionLost(self, reason)
 
+    ##
+    # implementation of some common methods servers might want to call
+    #
+
+    def command_close(self, ts, ms_id, trans_id, *args):
+        log.info('Closing connection on server request.')
+        self.transport.loseConnection()
+
+    def remote_onBWCheck(self, ts, ms_id, _none, probe):
+        log.debug('Bandwidth check probe (size: %r)', len(probe))
+        return 0
+
+    def command_onBWDone(self, ts, ms_id, trans_id, _none,
+                         bw, _ignore1=None, _ignore2=None, latency=None):
+        log.info('Bandwidth check done (estimated bandwidth: %r, latency: %r)',
+                 bw, latency)
+
+
 class SimpleAppClientFactory(BaseClientFactory):
     protocol = SimpleAppClientProtocol
 
