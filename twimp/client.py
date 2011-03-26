@@ -21,6 +21,7 @@ from twisted.internet import reactor
 
 from twimp import amf0
 from twimp import chunks
+from twimp.error import UnexpectedStatusError
 from twimp.primitives import _s_ulong_b as _s_ulong
 from twimp.dispatch import CallDispatchProtocol, CallDispatchFactory
 from twimp.urls import parse_rtmp_url
@@ -138,6 +139,33 @@ class SimpleAppClientProtocol(BaseClientProtocol):
         log.info('Bandwidth check done (estimated bandwidth: %r, latency: %r)',
                  bw, latency)
 
+    ##
+    # FCPublish/FCUnpublish and complementary onFCPublish/onFCUnpublish
+    # helpers and handlers
+    #
+
+    def call_FCPublish(self, name, ok_code='NetStream.Publish.Start'):
+        d = self._events.wait('onFCPublish', ok_code)
+        self.signalRemote(0, 'FCPublish', None, name)
+        return d
+
+    def command_onFCPublish(self, ts, ms_id, _trans_id, _none, info):
+        def miss_handler():
+            log.warning('unhandled onFCPublish: at %r, stream %r, info: %r',
+                        ts, ms_id, info)
+        self._events.dispatch('onFCPublish', info, miss_h=miss_handler)
+
+    def call_FCUnpublish(self, name, ok_code='NetStream.Unpublish.Success'):
+        d = self._events.wait('onFCUnpublish', ok_code)
+        self.signalRemote(0, 'FCUnpublish', None, name)
+        return d
+
+    def command_onFCUnpublish(self, ts, ms_id, _trans_id, _none, info):
+        def miss_handler():
+            log.warning('unhandled onFCUnpublish: at %r, stream %r, info: %r',
+                        ts, ms_id, info)
+        self._events.dispatch('onFCUnpublish', info, miss_h=miss_handler)
+
 
 class SimpleAppClientFactory(BaseClientFactory):
     protocol = SimpleAppClientProtocol
@@ -185,21 +213,39 @@ class ClientStream(object):
         self._sink = None
 
         self._state = None
+        self._fcpublished = False
         self.closed = False
 
-    def publish(self, name, source, mode='live', chunk_size=None):
+    def publish(self, name, source, mode='live', chunk_size=None,
+                fcpublish='no'):
         if self._state is not None:
             raise InvalidStreamState('requested publish in state %d' %
                                      self._state)
         self._state = STREAM_STATE_PUBLISHING
 
-        # mode ignored for now...
-        mode = 'live'
-        d = self.protocol.waitStatus(self.id, 'NetStream.Publish.Start')
-        self.protocol.signalRemote(self.id, 'publish', None, name, mode)
+        def do_publish(_result):
+            # mode ignored for now...
+            mode = 'live'
+            d = self.protocol.waitStatus(self.id, 'NetStream.Publish.Start')
+            self.protocol.signalRemote(self.id, 'publish', None, name, mode)
 
-        d.addCallbacks(self._start_writing, self._publish_failed,
-                       callbackArgs=(source, chunk_size))
+            d.addCallbacks(self._start_writing, self._publish_failed,
+                           callbackArgs=(source, chunk_size))
+            return d
+
+        if fcpublish != 'no':
+            self._fcpublished = False
+            d = self.protocol.call_FCPublish(name)
+            d.addCallback(self._fcpublish_ok)
+            if fcpublish == 'force':
+                d.addErrback(self._fcpublish_retry, name)
+
+            d.addErrback(self._fcpublish_failed)
+        else:
+            d = defer.succeed(None)
+
+        d.addCallback(do_publish)
+
         return d
 
     def _publish_failed(self, failure):
@@ -214,6 +260,29 @@ class ClientStream(object):
         self._source = source
         source.connect(self)
         source.start()
+
+    def _fcpublish_failed(self, failure):
+        self._state = None
+        log.info('FCPublish failed: %r', failure)
+        return failure
+
+    def _fcpublish_retry(self, failure, name):
+        log.debug('FCPublish failed, %r', failure.value)
+        if failure.check(UnexpectedStatusError):
+            if failure.value.args[0].code == 'NetStream.Publish.BadName':
+                log.debug('releasing stream and re-trying FCPublish...')
+                self.protocol.signalRemote(0, 'releaseStream', None, name)
+                d = self.protocol.call_FCPublish(name)
+                # note: not re-trying on subsequent failures;
+                # assuming _fcpublish_failed is attached after us:
+                d.addCallback(self._fcpublish_ok)
+                return d
+
+        return failure
+
+    def _fcpublish_ok(self, result):
+        self._fcpublished = True
+        log.debug('FCPublish succeded: %r', result)
 
     def set_chunk_size(self, new_size):
         sm = self.protocol.muxer.sendMessage
@@ -236,6 +305,8 @@ class ClientStream(object):
         self._source = None
 
         self._state = None
+
+        # TODO: add code for signalling FCUnpublish if we FCPublished...
 
         d = self.protocol.waitStatus(self.id, 'NetStream.Unpublish.Success')
         self.protocol.signalRemote(self.id, 'closeStream', None)
