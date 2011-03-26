@@ -106,6 +106,60 @@ class DeferredTracker(object):
         self._next_trans_id = {}
 
 
+class StatusEventTracker(object):
+    def __init__(self):
+        # { key => deque([(code, Deferred), ...]) }
+        self._event_callbacks = {}
+
+    def add(self, key, code, d):
+        q = self._event_callbacks.get(key, None)
+        if q is None:
+            q = self._event_callbacks[key] = deque()
+        q.append((code, d))
+
+    def pop(self, key):
+        code, d = None, None
+        q = self._event_callbacks.get(key, None)
+        if q:
+            code, d = q.popleft()
+        return code, d
+
+    def pop_all(self):
+        ret = ((code, d)
+               for q in self._event_callbacks.itervalues()
+               for (code, d) in q)
+        self._event_callbacks = {}
+        return ret
+
+    def wait(self, key, code):
+        d = defer.Deferred()
+        self.add(key, code, d)
+        return d
+
+    def cancel_all(self, reason=None):
+        waiting = self.pop_all()
+        if reason:
+            for _code, d in waiting:
+                d.errback(reason)
+
+    def dispatch(self, key, info, miss_h=None):
+        code, d = self.pop(key)
+
+        if not d:
+            if miss_h:
+                miss_h()
+        else:
+            try:
+                evt_code = info.code
+            except AttributeError, e:
+                d.errback(ProtocolContractError(e))
+            else:
+                if code is None or evt_code == code:
+                    d.callback(info)
+                else:
+                    d.errback(UnexpectedStatusError(info))
+
+
 class CommandDispatchProtocol(DispatchProtocol):
 
     def __init__(self):
@@ -208,58 +262,29 @@ class EventDispatchProtocol(CommandDispatchProtocol):
     def __init__(self):
         CommandDispatchProtocol.__init__(self)
 
-        # { ms_id => deque([(code, Deferred), ...]) }
-        self._event_callbacks = {}
+        self._events = StatusEventTracker()
 
-    def _add_status_deferred(self, ms_id, code, d):
-        q = self._event_callbacks.get(ms_id, None)
-        if q is None:
-            q = self._event_callbacks[ms_id] = deque()
-        q.append((code, d))
-
-    def _pop_status_deferred(self, ms_id):
-        code, d = None, None
-        q = self._event_callbacks.get(ms_id, None)
-        if q:
-            code, d = q.popleft()
-        return code, d
-
-    def _pop_status_all(self):
-        ret = ((code, d)
-               for q in self._event_callbacks.itervalues()
-               for (code, d) in q)
-        self._event_callbacks = {}
-        return ret
+    def _onStatus_ev_key(self, ms_id):
+        return (None, ms_id)
 
     def waitStatus(self, ms_id, code):
-        d = defer.Deferred()
-        self._add_status_deferred(ms_id, code, d)
-        return d
+        return self._events.wait(self._onStatus_ev_key(ms_id), code)
 
     def command_onStatus(self, ts, ms_id, _trans_id, _none, info):
         # trans_id not used, and _none seems to always be None...
-        code, d = self._pop_status_deferred(ms_id)
 
-        if not d:
+        def miss_handler():
             self.unhandledOnStatus(ts, ms_id, info)
-        else:
-            try:
-                evt_code = info.code
-            except AttributeError, e:
-                d.errback(ProtocolContractError(e))
-            else:
-                if code is None or evt_code == code:
-                    d.callback(info)
-                else:
-                    d.errback(UnexpectedStatusError(info))
+
+        self._events.dispatch(self._onStatus_ev_key(ms_id), info,
+                              miss_h=miss_handler)
 
     def unhandledOnStatus(self, ts, ms_id, info):
         log.warning('unhandled onStatus: at %r, stream %r, info: %r',
                     ts, ms_id, info)
 
     def connectionLost(self, reason=protocol.connectionDone):
-        for _code, d in self._pop_status_all():
-            d.errback(reason)
+        self._events.cancel_all(reason=reason)
 
         CommandDispatchProtocol.connectionLost(self, reason)
 
