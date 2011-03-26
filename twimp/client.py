@@ -81,6 +81,13 @@ class SimpleAppClientProtocol(BaseClientProtocol):
 
         return params
 
+    def _connect_call_failed(self, failure):
+        # this errback might have been fired because of connection
+        # failure, which we handle elsewhere...
+        if self._app:
+            self._app.failConnection(failure)
+            self._app = None
+
     def _init_connect(self):
         # why change chunk size? :/
         sm = self.muxer.sendMessage
@@ -95,12 +102,6 @@ class SimpleAppClientProtocol(BaseClientProtocol):
         def _connected(info):
             self._app.makeConnection(info)
 
-        def _connect_failed(failure):
-            # this errback might have been fired because of connection
-            # failure, which we handle elsewhere...
-            if self._app:
-                self._app.failConnection(failure)
-
         params = self.make_connect_params(app=app_path,
                                           # flashVer='LNX 10,0,22,87',
                                           flashVer=CLIENT_VERSION,
@@ -108,7 +109,7 @@ class SimpleAppClientProtocol(BaseClientProtocol):
                                           objectEncoding=0)
         d = self.callRemote(0, 'connect', params, {})
         # TODO: wrap actual server responses to failures where appropriate
-        d.addCallbacks(_connected, _connect_failed)
+        d.addCallbacks(_connected, self._connect_call_failed)
 
     def connectionLost(self, reason=protocol.connectionDone):
         if self._app:
