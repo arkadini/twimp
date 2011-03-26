@@ -335,3 +335,7 @@ class CallDispatchProtocol(EventDispatchProtocol):
         # seems that we're just supposed to silently ignore the request
         log.warning('unknown method called: %s, args: %r', cmd, args)
         raise CallAbortedException('unknown command %r' % (cmd,))
+
+
+class CallDispatchFactory(EventDispatchFactory):
+    protocol = CallDispatchProtocol

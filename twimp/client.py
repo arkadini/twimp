@@ -22,7 +22,7 @@ from twisted.internet import reactor
 from twimp import amf0
 from twimp import chunks
 from twimp.primitives import _s_ulong_b as _s_ulong
-from twimp.dispatch import EventDispatchProtocol, EventDispatchFactory
+from twimp.dispatch import CallDispatchProtocol, CallDispatchFactory
 from twimp.urls import parse_rtmp_url
 
 from twimp.helpers import vb, ignore_disconnect_eb
@@ -35,11 +35,11 @@ log = twimp.log.get_logger(LOG_CATEGORY)
 CLIENT_VERSION = 'TwiMMF/1.0 (compatible; FMSc/1.0)'
 
 
-class BaseClientProtocol(EventDispatchProtocol):
+class BaseClientProtocol(CallDispatchProtocol):
     is_client = True
 
 
-class BaseClientFactory(EventDispatchFactory, ClientFactory):
+class BaseClientFactory(CallDispatchFactory, ClientFactory):
     protocol = BaseClientProtocol
 
 
