@@ -95,8 +95,8 @@ class SimpleAppClientProtocol(BaseClientProtocol):
         sm(0, chunks.PROTO_SET_CHUNK_SIZE, 0, vb('00000400'.decode('hex')))
         self.muxer.set_chunk_size(0x0400)
 
-        app_path = self.factory.app_path
-        app_url = self.factory.url
+        app_path = self.factory.get_connect_app_path()
+        app_url = self.factory.get_connect_url()
 
         self._app = self.factory.make_app(self)
 
@@ -174,8 +174,8 @@ class SimpleAppClientFactory(BaseClientFactory):
                  app_factory, *app_args, **app_kwargs):
         BaseClientFactory.__init__(self, time.time())
 
-        self.url = None
-        self.app_path = None
+        self._url = None
+        self._app_path = None
 
         if connect_params is None:
             connect_params = {}
@@ -189,11 +189,17 @@ class SimpleAppClientFactory(BaseClientFactory):
 
     def _parse_url(self, url):
         scheme, host, port, path = parse_rtmp_url(url)
-        self.url = url
-        self.app_path = path
+        self._url = url
+        self._app_path = path
 
     def get_connect_params(self):
         return self._connect_params.copy()
+
+    def get_connect_app_path(self):
+        return self._app_path
+
+    def get_connect_url(self):
+        return self._url
 
     def make_app(self, protocol):
         return self._app_factory(protocol, *self._app_args, **self._app_kwargs)
