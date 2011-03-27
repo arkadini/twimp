@@ -215,7 +215,7 @@ class DispatchProtocol(BaseProtocol):
         if new_size != self.window_size:
             old_size, self.window_size = self.window_size, new_size
             self.set_next_ack(old_size)
-            self.check_send_ack(self)
+            self.check_send_ack()
 
     def set_next_ack(self, old_window_size=0):
         # the actual "algorithm" is here - Adobe's software seems to send

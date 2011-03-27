@@ -17,7 +17,7 @@ import time
 
 from twisted.internet import protocol
 from twisted.internet.protocol import ClientFactory
-from twisted.internet import reactor
+from twisted.internet import reactor, defer
 
 from twimp import amf0
 from twimp import chunks
