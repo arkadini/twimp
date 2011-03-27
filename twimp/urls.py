@@ -13,7 +13,8 @@
 #   limitations under the License.
 
 
-from urlparse import urlparse, urlunparse
+from urlparse import urlparse, urlunparse, parse_qsl
+from urllib import splitquery
 
 
 def parse_rtmp_url(url, default_port=1935):
@@ -39,3 +40,27 @@ def parse_rtmp_url(url, default_port=1935):
         app = app[1:]
 
     return scheme, host, port, app
+
+def unparse_rtmp_url((scheme, host, port, path), default_port=1935):
+    url = '%s://%s' % (scheme, host)
+    if port and port != default_port:
+        url += ':%d' % (port,)
+    if path:
+        url += '/' + path
+    return url
+
+
+def parse_normalize_app(app, default_instance='_definst_'):
+    args = []
+
+    app_base, query = splitquery(app)
+    if query:
+        args = parse_qsl(query)
+
+    parts = app_base.strip('/').split('/')
+    if len(parts) == 1:
+        napp = '%s/%s' % (parts[0], default_instance)
+    else:
+        napp = app_base
+
+    return app_base, napp, args
