@@ -20,4 +20,5 @@ setup(name='twimp',
       maintainer='Arek Korbik',
       maintainer_email='arkadini@gmail.com',
       url='http://github.com/arkadini/twimp',
-      packages=['twimp', 'twimp.crypto', 'twimp.server', 'twimp.scripts'])
+      packages=['twimp', 'twimp.crypto', 'twimp.server', 'twimp.scripts',
+                'twimp.auth'])

@@ -89,6 +89,10 @@ class SimpleAppClientProtocol(BaseClientProtocol):
             self._app.failConnection(failure)
             self._app = None
 
+    def _failed_disconnect(self, failure):
+        log.debug("Failed 'connecting': %r", failure.value)
+        self.transport.loseConnection()
+
     def _init_connect(self):
         # why change chunk size? :/
         sm = self.muxer.sendMessage
@@ -111,6 +115,7 @@ class SimpleAppClientProtocol(BaseClientProtocol):
         d = self.callRemote(0, 'connect', params, {})
         # TODO: wrap actual server responses to failures where appropriate
         d.addCallbacks(_connected, self._connect_call_failed)
+        d.addErrback(self._failed_disconnect)
 
     def connectionLost(self, reason=protocol.connectionDone):
         if self._app:
