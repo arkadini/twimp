@@ -106,6 +106,9 @@ class SimpleAuthAppClientFactory(SimpleAppClientFactory):
             self._auth_reconnect = False
             connector.connect()
         else:
+            if self._do_auth:
+                # update the auth args in case we'll want to re-connect...
+                self.set_app_auth_args(self.auth.get_auth_args(self.cred, None))
             SimpleAppClientFactory.clientConnectionLost(self, connector,
                                                         reason)
 

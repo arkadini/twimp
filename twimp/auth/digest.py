@@ -86,6 +86,10 @@ class DigestAuthenticator(Authenticator):
                          _HA2(cred.method, cred.uri))
 
     def _gen_response(self, args, cred, nonce):
+        # make sure to specify authmod if set
+        if self.authmod:
+            args.update(authmod=self.authmod)
+
         cnonce = _gen_cnonce()
 
         cred.update(nonce)
