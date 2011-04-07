@@ -280,7 +280,19 @@ data = [
     p('46ffffff0000010801000000', '00'),           # audio() @ 0x01000046 ms
     # and even more relative, and even bigger offset
     p('86ffffff01000001',         '00'),           # audio() @ 0x02000047 ms
-    ### 36 chunks, 26 messages
+
+    # relative, time offset > 0x00ffffff, chunked
+    p('46ffffff0000310801000002', '00' * 0x30),    # (1/2) @ 0x03000049 ms
+    p('c601000002',               '01'),           # (2/2) @ 0x03000049 ms
+
+    # completely compressed, time offset > 0x00ffffff, chunked
+    p('c601000003',               '02' * 0x30),    # (1/2) @ 0x04000052 ms
+    p('c601000003',               '03'),           # (2/2) @ 0x04000052 ms
+    ### 40 chunks, 28 messages
+
+    # this one's to make sure we receive all the previous ones ^^
+    p('07ffffff0000000890bd000001000001', ''),     # audio() @ 0x01000001 ms
+    ### 41 chunks, 29 messages
 ]
 
 # the following list should be in sync with the data list above (with
@@ -330,6 +342,13 @@ messages = [
     ((7, 16777216, 16777216, 0, 8, 48528), ''),
     ((6, 16777286, 16777216, 1, 8, 48527), '\x00'),
     ((6, 33554503, 16777217, 1, 8, 48527), '\x00'),
+    None,
+    ((6, 50331721, 16777218, 49, 8, 48527), ('\x00' * 48) + ('\x01' * 1)),
+    None,
+    ((6, 67108940, 16777219, 49, 8, 48527), ('\x02' * 48) + ('\x03' * 1)),
+    ### 40
+
+    ((7, 16777217, 16777217, 0, 8, 48528), ''),
 ]
 
 

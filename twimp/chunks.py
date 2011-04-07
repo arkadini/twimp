@@ -174,41 +174,50 @@ class Demuxer(object):
                 csid = _s_ushort_l.unpack(s.read(2))[0] + 64
 
             m_time, m_size, m_type, m_msid = None, None, None, None
+            c_h, h_base, accbody, to_read = None, None, None, None
+            m_time_ext = False
+            h_absolute = (htype == 0)
+
+            # check csid in the message and chunk stream caches
+            if csid in self.chstr_map:
+                c_h, accbody, to_read = self.chstr_map[csid]
+                m_time_ext = (c_h.time >= 0x00ffffff)
+            elif not h_absolute and csid in self.msg_map:
+                h_base = self.msg_map[csid]
+                m_time_ext = (h_base.time >= 0x00ffffff)
+            else:
+                # TODO: check/warn header is absolute here
+                pass
 
             if htype == 3:
                 pass
+            elif htype == 2:
+                _time_1, m_time = _s_time.unpack(s.read(3))
+                m_time += _time_1 << 8
             else:
-                if htype == 2:
-                    _time_1, m_time = _s_time.unpack(s.read(3))
-                    m_time += _time_1 << 8
-                else:
-                    (_time_1, m_time, _size_1,
-                     m_size, m_type) = _s_time_size_type.unpack(s.read(7))
-                    m_time += _time_1 << 8
-                    m_size += _size_1 << 8
-                    if htype == 0:
-                        m_msid, = _s_ulong_l.unpack(s.read(4))
-                if m_time == 0x00ffffff:
-                    if len(s) < 4:
-                        s = yield 4 # 4 bytes of "extended timestamp"
-                    m_time, = _s_ulong_b.unpack(s.read(4))
+                (_time_1, m_time, _size_1,
+                 m_size, m_type) = _s_time_size_type.unpack(s.read(7))
+                m_time += _time_1 << 8
+                m_size += _size_1 << 8
+                if htype == 0:
+                    m_msid, = _s_ulong_l.unpack(s.read(4))
+
+            if m_time == 0x00ffffff or m_time is None and m_time_ext:
+                if len(s) < 4:
+                    s = yield 4 # 4 bytes of "extended timestamp"
+                m_time, = _s_ulong_b.unpack(s.read(4))
 
             h = Header(csid, m_time, m_size, m_type, m_msid)
-            accbody = None
 
-            # fill header using message and chunk stream caches...
-
-            if h.cs_id in self.chstr_map:
-                _h, accbody, to_read = self.chstr_map[h.cs_id]
+            # fill header if cached entry was found earlier
+            if c_h:
                 # TODO: check/warn header consistency (with the cached
                 # first one)
-                h = _h
-            elif not h.absolute and h.cs_id in self.msg_map:
-                h_base = self.msg_map[h.cs_id]
+                h = c_h
+            elif h_base:
                 h = absolutize(h, h_base)
                 to_read = h.size
             else:
-                # TODO: check/warn header is absolute here
                 to_read = h.size
 
             need_bytes = min(to_read, self.chunk_size)
@@ -237,13 +246,19 @@ class Demuxer(object):
                     self.protocol.messageReceived(h, vecbuf.VecBuf(accbody))
 
 
-def _encode_basic_header(h_type, cs_id):
+def _encode_basic_header(h_type, cs_id, time=None):
     if cs_id > 0x013f:          # 256 + 63
-        return _s_ext_csid.pack((h_type << 6) | 1, cs_id - 64)
+        base = _s_ext_csid.pack((h_type << 6) | 1, cs_id - 64)
     elif cs_id > 0x3f:          # 63
-        return _s_double_uchar.pack(h_type << 6, cs_id - 64)
+        base = _s_double_uchar.pack(h_type << 6, cs_id - 64)
+    else:
+        base = _s_uchar.pack((h_type << 6) | cs_id)
 
-    return _s_uchar.pack((h_type << 6) | cs_id)
+    if time >= 0x00ffffff:       # implicit None < int
+        return base + _s_ulong_b.pack(time)
+
+    return base
+
 
 def encode_full_header(cs_id, time, size, msg_type, ms_id):
     """Serialize an absolute (type 0) chunk header."""
@@ -271,7 +286,7 @@ def encode_comp_header(h_type, cs_id, time, size, msg_type, ms_id):
 
     if h_type == 3:
         # just the "basic header"
-        return _encode_basic_header(h_type, cs_id)
+        return _encode_basic_header(h_type, cs_id, time)
     elif h_type == 0:
         # delegate
         return encode_full_header(cs_id, time, size, msg_type, ms_id)
@@ -309,7 +324,7 @@ class Chunker(object):
     def set_chunk_size(self, new_chunk_size):
         self.chunk_size = new_chunk_size
 
-    def __call__(self, cs_id, first_header, body):
+    def __call__(self, cs_id, first_header, body, time=None):
         """Make a generator yielding body in appropriately-sized chunks.
 
         @type first_header: str
@@ -327,7 +342,7 @@ class Chunker(object):
         else:
             to_send -= self.chunk_size
             yield first_header, body.read_seq(self.chunk_size)
-            header = _encode_basic_header(3, cs_id)
+            header = _encode_basic_header(3, cs_id, time)
 
             while to_send:
                 chunk = min(to_send, self.chunk_size)
@@ -517,6 +532,8 @@ class Muxer(object):
             self._cached[cs_id] = (time, new_time, size, msg_type, ms_id)
             raw_header = encode_comp_header(h_type, cs_id, new_time, size,
                                             msg_type, ms_id)
+            time = new_time
 
         self.producer.queue_chunker(priority,
-                                    self._chunker(cs_id, raw_header, body))
+                                    self._chunker(cs_id, raw_header, body,
+                                                  time))
