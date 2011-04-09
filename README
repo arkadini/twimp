@@ -8,5 +8,6 @@ the twisted design principles closer than other implementations.
 Dependencies
 ============
 
+* Python 2.5+
 * Twisted
-* M2Crypto for the crypto handshake
+

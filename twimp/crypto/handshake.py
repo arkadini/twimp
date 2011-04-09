@@ -13,10 +13,10 @@
 #   limitations under the License.
 
 
+from hashlib import sha256
+import hmac
 import random
 import struct
-
-from M2Crypto.EVP import hmac
 
 from twimp.handshake import Handshaker
 from twimp.primitives import _s_ulong_b as _s_ulong
@@ -26,6 +26,10 @@ from twimp.utils import ms_time
 LOG_CATEGORY = 'crypto.hs'
 import twimp.log
 log = twimp.log.get_logger(LOG_CATEGORY)
+
+
+def _hmac(key, msg, digestmod=sha256):
+    return hmac.new(key, msg, digestmod).digest()
 
 
 # most constants defined in this module were caught floating around
@@ -134,7 +138,7 @@ class CryptoHandshaker(Handshaker):
 
         # calculate digest
         key = self.select_other_key_short() # assuming we're the server
-        digest = hmac(key, data[:offset] + data[offset+32:], algo='sha256')
+        digest = _hmac(key, data[:offset] + data[offset+32:])
 
         return buffer(data, offset, 32) == buffer(digest)
 
@@ -203,7 +207,7 @@ class CryptoHandshaker(Handshaker):
 
         # calculate digest
         key = self.select_own_key_short()
-        digest = hmac(key, request, algo='sha256')
+        digest = _hmac(key, request)
 
         # insert digest at the offset and return the whole packet
         return request[:offset] + digest + request[offset:]
@@ -224,13 +228,13 @@ class CryptoHandshaker(Handshaker):
 
         # calculate a digest of the request digest
         key = self.select_own_key()
-        digest_key = hmac(key, req_digest, algo='sha256')
+        digest_key = _hmac(key, req_digest)
 
         # prepare response
         response = generate_random_bytes(self.packet_bytes - 32)
 
         # calculate response digest and append it to the response
-        digest = hmac(digest_key, response, algo='sha256')
+        digest = _hmac(digest_key, response)
         return response + digest
 
     def verify_simple_response(self, request, response):
@@ -248,11 +252,10 @@ class CryptoHandshaker(Handshaker):
         # calculate what would have to be the digest of the request
         # digest calculated by the peer
         key = self.select_other_key()
-        digest_key = hmac(key, req_digest, algo='sha256')
+        digest_key = _hmac(key, req_digest)
 
         # calculate our version of the response digest
-        digest = hmac(digest_key, buffer(response, 0, self.packet_bytes - 32),
-                      algo='sha256')
+        digest = _hmac(digest_key, buffer(response, 0, self.packet_bytes - 32))
 
         # print 'verify_response (%s)' % (('relaxed', 'strict')[self.strict])
         # print 'other:', response[-32:].encode('hex')
