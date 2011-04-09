@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 
+import logging
 import time
 
 from twisted.internet import protocol
@@ -224,7 +225,7 @@ class ClientStream(object):
         self._sink = None
 
         self._state = None
-        self._fcpublished = False
+        self._fcpublished = None
         self.closed = False
 
     def publish(self, name, source, mode='live', chunk_size=None,
@@ -245,9 +246,9 @@ class ClientStream(object):
             return d
 
         if fcpublish != 'no':
-            self._fcpublished = False
+            self._fcpublished = None
             d = self.protocol.call_FCPublish(name)
-            d.addCallback(self._fcpublish_ok)
+            d.addCallback(self._fcpublish_ok, name)
             if fcpublish == 'force':
                 d.addErrback(self._fcpublish_retry, name)
 
@@ -291,9 +292,9 @@ class ClientStream(object):
 
         return failure
 
-    def _fcpublish_ok(self, result):
-        self._fcpublished = True
-        log.debug('FCPublish succeded: %r', result)
+    def _fcpublish_ok(self, result, name):
+        self._fcpublished = name
+        log.debug('FCPublish succeeded: %r', result)
 
     def set_chunk_size(self, new_size):
         sm = self.protocol.muxer.sendMessage
@@ -311,20 +312,48 @@ class ClientStream(object):
         if self._state != STREAM_STATE_PUBLISHING:
             raise InvalidStreamState('requested stop publish in state %d' %
                                      self._state)
-        self._source.stop()
-        self._source.disconnect()
-        self._source = None
 
-        self._state = None
+        def log_failure(failure):
+            # log the failure and consume it
+            log.info(failure.value, exc_info=log.isEnabledFor(logging.DEBUG))
+            return None
 
-        # TODO: add code for signalling FCUnpublish if we FCPublished...
+        def do_stop(_result):
+            self._source.stop()
+            self._source.disconnect()
+            self._source = None
 
-        d = self.protocol.waitStatus(self.id, 'NetStream.Unpublish.Success')
-        self.protocol.signalRemote(self.id, 'closeStream', None)
+            self._state = None
 
-        d.addErrback(ignore_disconnect_eb)
-        d.addErrback(self._failed_unpublishing)
+        def do_unpublish(_result):
+            d = self.protocol.waitStatus(self.id, 'NetStream.Unpublish.Success')
+            self.protocol.signalRemote(self.id, 'closeStream', None)
+
+            d.addErrback(ignore_disconnect_eb)
+            d.addErrback(self._failed_unpublishing)
+            return d
+
+        if self._fcpublished is not None:
+            d = self.protocol.call_FCUnpublish(self._fcpublished)
+            self._fcpublished = None
+            d.addCallbacks(self._fcunpublish_ok, self._fcunpublish_failed)
+            d.addErrback(log_failure) # log and forget any errors
+        else:
+            d = defer.succeed(None)
+
+        d.addCallback(do_stop)
+        d.addCallback(do_unpublish)
+
         return d
+
+    def _fcunpublish_ok(self, result):
+        # nothing to do
+        return result
+
+    def _fcunpublish_failed(self, failure):
+        # undocumented possibility - just return the failure so it can
+        # be later logged and ignored
+        return failure
 
     def _force_cleanup(self):
         if self._source:
