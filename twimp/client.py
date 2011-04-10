@@ -275,7 +275,8 @@ class ClientStream(object):
 
     def _fcpublish_failed(self, failure):
         self._state = None
-        log.info('FCPublish failed: %r', failure)
+        log.info('FCPublish failed: %r', failure.value,
+                 exc_info=log.isEnabledFor(logging.DEBUG))
         return failure
 
     def _fcpublish_retry(self, failure, name):
@@ -287,7 +288,7 @@ class ClientStream(object):
                 d = self.protocol.call_FCPublish(name)
                 # note: not re-trying on subsequent failures;
                 # assuming _fcpublish_failed is attached after us:
-                d.addCallback(self._fcpublish_ok)
+                d.addCallback(self._fcpublish_ok, name)
                 return d
 
         return failure
