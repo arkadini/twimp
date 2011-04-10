@@ -661,7 +661,7 @@ def main(argv):
                       help='video bitrate in kbit/s (default: %default)',
                       default=400.0)
     parser.add_option('-s', '--sample-rate', action='store', dest='srate',
-                      type='float',
+                      type='int',
                       help=('audio sample rate in Hz (default: speex: 32000, '
                             'other codecs: 44100)'))
     parser.add_option('-f', '--frame-rate', action='store', dest='frate',
