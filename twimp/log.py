@@ -21,6 +21,7 @@ LOG_FORMAT = ('%(asctime)s  %(process)5d  '
               '%(levelname)-7s %(name)-20s %(message)s '
               '[%(pathname)s:%(lineno)d]')
 TWISTED_CATEGORY = '%s.twisted' % LOG_CATEGORY
+LOG_ENV_VAR = 'TWIMP_DEBUG'
 
 _logger = None
 
@@ -89,7 +90,7 @@ def set_levels(levels_string):
         logger.setLevel(level)
 
 
-def set_levels_from_env(varname='RTMP_DEBUG'):
+def set_levels_from_env(varname=LOG_ENV_VAR):
     import os
     levels = os.environ.get(varname)
     if levels:
