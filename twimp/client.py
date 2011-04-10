@@ -117,7 +117,7 @@ class SimpleAppClientProtocol(BaseClientProtocol):
             failure.trap(CommandResultError)
             # for the moment we know we tried to connect, hence ConnectError
             # TODO: add a more fine-grained translation(?)
-            return Failure(ClientConnectError(failure.value.description()))
+            return Failure(ClientConnectError(*failure.value.args))
 
         params = self.make_connect_params(app=app_path,
                                           # flashVer='LNX 10,0,22,87',

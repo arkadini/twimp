@@ -25,7 +25,7 @@ class UnexpectedStatusError(ValueError):
 
 
 class CommandResultError(RuntimeError):
-    def description(self):
+    def __str__(self):
         desc = None
         if (self.args and len(self.args) == 2 and
             isinstance(self.args[1], amf0.Object)):
@@ -33,7 +33,7 @@ class CommandResultError(RuntimeError):
             if obj.has_key('description'):
                 desc = '%s: %s' % (obj.get('code', self.__class__.__name__),
                                    obj.description)
-        return desc or RuntimeError.__repr__(self)
+        return desc or RuntimeError.__str__(self)
 
 
 class ClientConnectError(CommandResultError):

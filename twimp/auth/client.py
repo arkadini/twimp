@@ -24,6 +24,7 @@ the connect rejection result (as used by FMS, Red5, ...).
 from urllib import urlencode
 
 from twisted.internet import reactor
+from twisted.python.failure import Failure
 
 from twimp.auth.helpers import check_get_rejected_desc
 from twimp.client import SimpleAppClientProtocol, SimpleAppClientFactory
@@ -45,7 +46,10 @@ class SimpleAuthAppClientProtocol(SimpleAppClientProtocol):
         log.debug('_connect_call_failed(2): %r', failure.value)
 
         desc = check_get_rejected_desc(failure)
-        args = self.factory.auth.get_auth_args(self.factory.cred, desc)
+        try:
+            args = self.factory.auth.get_auth_args(self.factory.cred, desc)
+        except:
+            return SimpleAppClientProtocol._connect_call_failed(self, Failure())
 
         if args is not None:
             self.factory.set_app_auth_args(args)
