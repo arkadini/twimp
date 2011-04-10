@@ -231,8 +231,8 @@ class ClientStream(object):
     def publish(self, name, source, mode='live', chunk_size=None,
                 fcpublish='no'):
         if self._state is not None:
-            raise InvalidStreamState('requested publish in state %d' %
-                                     self._state)
+            raise InvalidStreamState('requested publish in state %r' %
+                                     (self._state,))
         self._state = STREAM_STATE_PUBLISHING
 
         def do_publish(_result):
@@ -310,8 +310,8 @@ class ClientStream(object):
 
     def stop_publishing(self):
         if self._state != STREAM_STATE_PUBLISHING:
-            raise InvalidStreamState('requested stop publish in state %d' %
-                                     self._state)
+            raise InvalidStreamState('requested stop publish in state %r' %
+                                     (self._state,))
 
         def log_failure(failure):
             # log the failure and consume it
@@ -371,8 +371,8 @@ class ClientStream(object):
             self._force_cleanup()
 
         if self._state is not None:
-            raise InvalidStreamState('cannot close in state %d' %
-                                     self._state)
+            raise InvalidStreamState('cannot close in state %r' %
+                                     (self._state,))
         self.protocol = None
         self.closed = True
 
