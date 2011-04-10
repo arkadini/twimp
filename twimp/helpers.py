@@ -56,32 +56,44 @@ def vb_clone(vb):
 #
 
 class VerboseDemuxerMixin(object):
+    def _print_header(self, header):
+        print '%-54r  ' % (header,),
+
     def controlMessageReceived(self, header, body):
-        print header, ellip(body.peek(len(body)).encode('hex'))
+        self._print_header(header)
+        print ellip(body.peek(len(body)).encode('hex'))
         super(VerboseDemuxerMixin, self).controlMessageReceived(header, body)
 
 
 class PrintMsgDemuxerMixin(object):
+    def _print_header(self, header):
+        print '%-54r  ' % (header,),
+
     def doSetChunkSize(self, header, new_size):
         super(PrintMsgDemuxerMixin, self).doSetChunkSize(header, new_size)
-        print header, '(chunk size: %d)' % new_size
+        self._print_header(header)
+        print '(chunk size: %d)' % new_size
 
     def doAbortMessage(self, header, cs_id):
         super(PrintMsgDemuxerMixin, self).doAbortMessage(header, cs_id)
-        print header, '(abort: %d)' % cs_id
+        self._print_header(header)
+        print '(abort: %d)' % cs_id
 
     def doACK(self, header, seq_num):
         super(PrintMsgDemuxerMixin, self).doACK(header, seq_num)
-        print header, '(ack: %d)' % seq_num
+        self._print_header(header)
+        print '(ack: %d)' % seq_num
 
     def doWindowSize(self, header, window_size):
         super(PrintMsgDemuxerMixin, self).doWindowSize(header, window_size)
-        print header, '(window: %d)' % window_size
+        self._print_header(header)
+        print '(window: %d)' % window_size
 
     def doSetBandwidth(self, header, window_size, limit_type):
         super(PrintMsgDemuxerMixin, self).doSetBandwidth(header, window_size,
                                                          limit_type)
-        print header, '(peer bw: %d %d)' % (window_size, limit_type)
+        self._print_header(header)
+        print '(peer bw: %d %d)' % (window_size, limit_type)
 
 
     ### user control events:
@@ -89,42 +101,50 @@ class PrintMsgDemuxerMixin(object):
     def doUserControlStreamBegin(self, header, stream_id):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlStreamBegin(header, stream_id)
-        print header, '(ctrl stream begin: %d)' % stream_id
+        self._print_header(header)
+        print '(ctrl stream begin: %d)' % stream_id
 
     def doUserControlStreamEOF(self, header, stream_id):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlStreamEOF(header, stream_id)
-        print header, '(ctrl stream EOF: %d)' % stream_id
+        self._print_header(header)
+        print '(ctrl stream EOF: %d)' % stream_id
 
     def doUserControlStreamDry(self, header, stream_id):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlStreamDry(header, stream_id)
-        print header, '(ctrl stream dry: %d)' % stream_id
+        self._print_header(header)
+        print '(ctrl stream dry: %d)' % stream_id
 
     def doUserControlStreamRecorded(self, header, stream_id):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlStreamRecorded(header, stream_id)
-        print header, '(ctrl stream recorded: %d)' % stream_id
+        self._print_header(header)
+        print '(ctrl stream recorded: %d)' % stream_id
 
     def doUserControlBufferLength(self, header, stream_id, length):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlBufferLength(header, stream_id, length)
-        print header, '(ctrl buffer length: %d %d)' % (stream_id, length)
+        self._print_header(header)
+        print '(ctrl buffer length: %d %d)' % (stream_id, length)
 
     def doUserControlPing(self, header, peer_time):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlPing(header, peer_time)
-        print header, '(ctrl ping: %d)' % peer_time
+        self._print_header(header)
+        print '(ctrl ping: %d)' % peer_time
 
     def doUserControlPong(self, header, echo_time):
         p = super(PrintMsgDemuxerMixin, self)
         p.doUserControlPong(header, echo_time)
-        print header, '(ctrl pong: %d)' % echo_time
+        self._print_header(header)
+        print '(ctrl pong: %d)' % echo_time
 
     def doUserControlUnknownType(self, header, evt_type, body):
         p = super(PrintMsgDemuxerMixin, self)
         _body = body.peek(len(body))
-        print header, '(ctrl ?? (%d))' % evt_type, _body[:].encode('hex')
+        self._print_header(header)
+        print '(ctrl ?? (%d))' % evt_type, _body[:].encode('hex')
         p.doUserControlUnknownType(header, evt_type, body)
 
 
@@ -141,9 +161,13 @@ user_ctrl_types = {
 class PrintMsgPureDemuxerMixin(PrintMsgDemuxerMixin):
     """A mixin for pure Demuxer that doesn't dispatch user control events.
     """
+    def _print_header(self, header):
+        print '%-54r  ' % (header,),
+
     def doUserControlMessage(self, header, evt_type, body):
         _body = body.peek(len(body))
         super(PrintMsgDemuxerMixin, self).doUserControlMessage(header,
                                                                evt_type, body)
         m = user_ctrl_types.get(evt_type, '??')
-        print header, '(ctrl: (%d) %s)' % (evt_type, m), _body[:].encode('hex')
+        self._print_header(header)
+        print '(ctrl: (%d) %s)' % (evt_type, m), _body[:].encode('hex')
