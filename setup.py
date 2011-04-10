@@ -7,10 +7,19 @@ Another python RTMP implementation: this one is supposed to match
 the twisted design principles closer than other implementations.
 """
 
+import os
+import sys
+
 from distutils.core import setup
 
+
+sys.path.insert(0, os.path.dirname(__file__))
+from twimp import __version__
+sys.path.pop(0)
+
+
 setup(name='twimp',
-      version='0.1',
+      version=__version__,
       description='Twisted RTMP implementation',
       long_description=__doc__,
       platforms=['any'],
