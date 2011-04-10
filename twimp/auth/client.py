@@ -38,10 +38,9 @@ log = twimp.log.get_logger(LOG_CATEGORY)
 class SimpleAuthAppClientProtocol(SimpleAppClientProtocol):
     def _connect_call_failed(self, failure):
         log.debug('_connect_call_failed: %r', failure.value)
-        SimpleAppClientProtocol._connect_call_failed(self, failure)
 
         if not self.factory._do_auth:  # ... :/
-            return
+            return SimpleAppClientProtocol._connect_call_failed(self, failure)
 
         log.debug('_connect_call_failed(2): %r', failure.value)
 
@@ -51,6 +50,8 @@ class SimpleAuthAppClientProtocol(SimpleAppClientProtocol):
         if args is not None:
             self.factory.set_app_auth_args(args)
             self.factory._auth_reconnect = True  # umm... bleehh! :/
+
+        return failure
 
 
 class SimpleAuthAppClientFactory(SimpleAppClientFactory):

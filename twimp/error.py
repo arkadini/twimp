@@ -25,9 +25,25 @@ class UnexpectedStatusError(ValueError):
 
 
 class CommandResultError(RuntimeError):
+    def description(self):
+        desc = None
+        if (self.args and len(self.args) == 2 and
+            isinstance(self.args[1], amf0.Object)):
+            obj = self.args[1]
+            if obj.has_key('description'):
+                desc = '%s: %s' % (obj.get('code', self.__class__.__name__),
+                                   obj.description)
+        return desc or RuntimeError.__repr__(self)
+
+
+class ClientConnectError(CommandResultError):
     pass
 
 
+##
+# the following error classes are for use in remote calls handlers to
+# be communicated to the server
+#
 
 class CallResultError(ValueError):
     """Call resulted in an error"""

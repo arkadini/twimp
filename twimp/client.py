@@ -19,10 +19,12 @@ import time
 from twisted.internet import protocol
 from twisted.internet.protocol import ClientFactory
 from twisted.internet import reactor, defer
+from twisted.python.failure import Failure
 
 from twimp import amf0
 from twimp import chunks
-from twimp.error import UnexpectedStatusError
+from twimp.error import UnexpectedStatusError, CommandResultError
+from twimp.error import ClientConnectError
 from twimp.primitives import _s_ulong_b as _s_ulong
 from twimp.dispatch import CallDispatchProtocol, CallDispatchFactory
 from twimp.urls import parse_rtmp_url
@@ -86,12 +88,14 @@ class SimpleAppClientProtocol(BaseClientProtocol):
     def _connect_call_failed(self, failure):
         # this errback might have been fired because of connection
         # failure, which we handle elsewhere...
+        log.debug('_connect_call_failed: %r', failure.value)
         if self._app:
             self._app.failConnection(failure)
             self._app = None
+        return failure
 
     def _failed_disconnect(self, failure):
-        log.debug("Failed 'connecting': %r", failure.value)
+        log.info("Failed 'connecting': %r", failure.value)
         self.transport.loseConnection()
 
     def _init_connect(self):
@@ -106,15 +110,23 @@ class SimpleAppClientProtocol(BaseClientProtocol):
         self._app = self.factory.make_app(self)
 
         def _connected(info):
+            log.debug('_connected: %r', info)
             self._app.makeConnection(info)
+
+        def _translate_failure(failure):
+            failure.trap(CommandResultError)
+            # for the moment we know we tried to connect, hence ConnectError
+            # TODO: add a more fine-grained translation(?)
+            return Failure(ClientConnectError(failure.value.description()))
 
         params = self.make_connect_params(app=app_path,
                                           # flashVer='LNX 10,0,22,87',
                                           flashVer=CLIENT_VERSION,
                                           tcUrl=app_url,
                                           objectEncoding=0)
+        log.debug('invoking connect(%r)', params)
         d = self.callRemote(0, 'connect', params, {})
-        # TODO: wrap actual server responses to failures where appropriate
+        d.addErrback(_translate_failure)
         d.addCallbacks(_connected, self._connect_call_failed)
         d.addErrback(self._failed_disconnect)
 
