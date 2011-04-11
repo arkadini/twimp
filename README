@@ -11,3 +11,16 @@ Dependencies
 * Python 2.5+
 * Twisted
 
+
+Installation
+============
+
+twimp comes with a distutils setup.py script, so the usual::
+
+  $ python ./setup.py install
+
+or::
+
+  $ python ./setup.py bdist_rpm
+
+should do the trick.
