@@ -32,6 +32,12 @@ def ms_time(t):
 
     return int(t * 1000)
 
+def ms_time_wrapped(t):
+    """Convert time t from (real) seconds to (int) milliseconds and
+    wrap it to [0; 0xffffffff] range."""
+
+    return ms_time(t) % 0x100000000
+
 
 class GeneratorWrapperProtocol(protocol.Protocol):
     def __init__(self, proto=None):

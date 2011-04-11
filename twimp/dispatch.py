@@ -27,7 +27,7 @@ from twimp.error import ProtocolContractError, UnexpectedStatusError
 from twimp.error import CommandResultError
 from twimp.error import CallResultError, CallAbortedException
 from twimp.proto import DispatchProtocol, DispatchFactory
-from twimp.utils import ms_time
+from twimp.utils import ms_time_wrapped
 
 
 LOG_CATEGORY = 'dispatch'
@@ -329,7 +329,7 @@ class CallDispatchProtocol(EventDispatchProtocol):
 
         body = self.encode_amf('_result', trans_id, *result)
 
-        ts = ms_time(self.session_time())
+        ts = ms_time_wrapped(self.session_time())
         self.muxer.sendMessage(ts, chunks.MSG_COMMAND, ms_id, body)
 
     def _remote_handler_eb(self, failure, ms_id, trans_id):
@@ -350,7 +350,7 @@ class CallDispatchProtocol(EventDispatchProtocol):
                               description=repr(failure.value))
             body = self.encode_amf('_error', trans_id, None, err)
 
-        ts = ms_time(self.session_time())
+        ts = ms_time_wrapped(self.session_time())
         self.muxer.sendMessage(ts, chunks.MSG_COMMAND, ms_id, body)
 
         if fatal:
